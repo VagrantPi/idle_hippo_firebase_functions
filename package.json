@@ -1,0 +1,24 @@
+{
+  "name": "idle-hippo-firebase",
+  "private": true,
+  "workspaces": [
+    "functions"
+  ],
+  "engines": {
+    "node": "22"
+  },
+  "scripts": {
+    "install:functions": "npm --prefix functions install",
+    "build": "npm --prefix functions run build",
+    "test": "npm --prefix functions run test",
+    "lint": "npm --prefix functions run lint",
+    "serve": "npm --prefix functions run serve",
+    "emulators": "npm --prefix functions run serve",
+    "deploy": "npm --prefix functions run deploy",
+    "logs": "npm --prefix functions run logs",
+    "b4:install-googleapis": "npm --prefix functions i googleapis",
+    "secrets:set:USE_PLAY_API": "firebase functions:secrets:set USE_PLAY_API",
+    "secrets:set:API_KEY": "firebase functions:secrets:set API_KEY",
+    "secrets:set:PLAY_API_SA": "firebase functions:secrets:set PLAY_API_SA --data-file ./service-account.json"
+  }
+}
