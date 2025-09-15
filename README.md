@@ -1,0 +1,1 @@
+# idle_hippo_firebase_functions
