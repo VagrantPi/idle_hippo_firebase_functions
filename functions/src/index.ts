@@ -11,6 +11,7 @@ import {setGlobalOptions} from "firebase-functions";
 import {onRequest} from "firebase-functions/https";
 import * as logger from "firebase-functions/logger";
 import {getConfig} from "./config.js";
+import {withCors, requireApiKeyIfSet, requireFields, requireJson} from "./http.js";
 
 // Start writing functions
 // https://firebase.google.com/docs/functions/typescript
@@ -27,21 +28,12 @@ import {getConfig} from "./config.js";
 // this will be the maximum concurrent request count.
 setGlobalOptions({ maxInstances: 10 });
 
-function setCors(res: any) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-API-KEY");
-}
-
-export const healthz = onRequest((req, res) => {
-  setCors(res);
-  if (req.method === "OPTIONS") {
-    res.status(204).send("");
-    return;
-  }
-  const {usePlayApi} = getConfig();
-  res.status(200).json({status: "ok", mock: !usePlayApi});
-});
+export const healthz = onRequest(
+  withCors((req, res) => {
+    const {usePlayApi} = getConfig();
+    res.status(200).json({status: "ok", mock: !usePlayApi});
+  })
+);
 
 type VerifyRequest = {
   packageName?: string;
@@ -50,68 +42,47 @@ type VerifyRequest = {
   debug?: boolean;
 };
 
-export const verifyPurchase = onRequest(async (req, res) => {
-  setCors(res);
-
-  if (req.method === "OPTIONS") {
-    res.status(204).send("");
-    return;
-  }
-
-  if (req.method !== "POST") {
-    res.status(405).json({ok: false, reason: "Method Not Allowed"});
-    return;
-  }
-
-  const {usePlayApi, apiKey} = getConfig();
-
-  // API key check (optional)
-  if (apiKey) {
-    const provided = req.get("X-API-KEY");
-    if (!provided || provided !== apiKey) {
-      res.status(401).json({ok: false, reason: "Unauthorized"});
-      return;
-    }
-  }
-
-  const body: VerifyRequest = typeof req.body === "object" ? req.body : {};
-  const {packageName, productId, purchaseToken, debug} = body;
-
-  if (debug) {
-    logger.debug("verifyPurchase request", {packageName, productId});
-  }
-
-  if (!packageName || !productId || !purchaseToken) {
-    res.status(400).json({ok: false, reason: "Missing required fields"});
-    return;
-  }
-
-  try {
-    if (!usePlayApi) {
-      const now = Date.now().toString();
-      res.status(200).json({
-        ok: true,
-        purchaseState: 0,
-        consumptionState: 0,
-        orderId: "MOCK.ORDER",
-        purchaseTimeMillis: now,
-        reason: null,
-      });
+export const verifyPurchase = onRequest(
+  withCors(async (req, res) => {
+    if (req.method !== "POST") {
+      res.status(405).json({ok: false, reason: "Method Not Allowed"});
       return;
     }
 
-    // NOTE: Real Play API integration comes in later stages.
-    // Placeholder to satisfy shape; currently not implemented.
-    res.status(200).json({
-      ok: false,
-      purchaseState: 2,
-      consumptionState: 0,
-      orderId: null,
-      purchaseTimeMillis: null,
-      reason: "PLAY_API_NOT_IMPLEMENTED",
-    });
-  } catch (err: any) {
-    logger.error("verifyPurchase error", err);
-    res.status(500).json({ok: false, reason: "Internal Server Error"});
-  }
-});
+    if (!requireApiKeyIfSet(req, res)) return;
+    if (!requireJson(req, res)) return;
+
+    const body: VerifyRequest = typeof req.body === "object" ? req.body : {};
+    const {packageName, productId, purchaseToken, debug} = body;
+
+    if (!requireFields(req, res, ["packageName", "productId", "purchaseToken"])) {
+      return;
+    }
+
+    if (debug) {
+      logger.debug("verifyPurchase request", {packageName, productId, purchaseToken});
+    }
+
+    try {
+      const {usePlayApi} = getConfig();
+      if (!usePlayApi) {
+        const now = Date.now().toString();
+        res.status(200).json({
+          ok: true,
+          purchaseState: 0,
+          consumptionState: 0,
+          orderId: "MOCK.ORDER",
+          purchaseTimeMillis: now,
+          reason: null,
+        });
+        return;
+      }
+
+      // Placeholder for Stage B4 Play API integration
+      res.status(501).json({ ok: false, reason: "PLAY_API_NOT_IMPLEMENTED" });
+    } catch (err: any) {
+      logger.error("verifyPurchase error", err);
+      res.status(500).json({ok: false, reason: "Internal Server Error"});
+    }
+  })
+);
