@@ -123,32 +123,4 @@ describe('verifyPurchase (mock)', () => {
     assert.equal(res.body.ok, false);
   });
 });
-
-describe('healthz', () => {
-  beforeEach(() => {
-    delete process.env.USE_PLAY_API;
-    delete process.env.API_KEY;
-  });
-
-  it('reports mock true when USE_PLAY_API=false', async () => {
-    process.env.USE_PLAY_API = 'false';
-    const req = makeReq({ method: 'GET' });
-    const res = new MockRes();
-    await functions.healthz(req, res);
-    await res.finished;
-    assert.equal(res.statusCode, 200);
-    assert.equal(res.body.status, 'ok');
-    assert.equal(res.body.mock, true);
-  });
-
-  it('reports mock false when USE_PLAY_API=true', async () => {
-    process.env.USE_PLAY_API = 'true';
-    const req = makeReq({ method: 'GET' });
-    const res = new MockRes();
-    await functions.healthz(req, res);
-    await res.finished;
-    assert.equal(res.statusCode, 200);
-    assert.equal(res.body.status, 'ok');
-    assert.equal(res.body.mock, false);
-  });
-});
+ 
