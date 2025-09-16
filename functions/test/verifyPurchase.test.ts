@@ -66,7 +66,7 @@ describe('verifyPurchase (mock)', () => {
       headers: { 'content-type': 'application/json' },
       body: {
         packageName: 'com.example.idleHippo',
-        productId: 'foo',
+        productId: 'card_click_perm',
         purchaseToken: 'bar',
       },
     });
@@ -121,6 +121,42 @@ describe('verifyPurchase (mock)', () => {
     await res.finished;
     assert.equal(res.statusCode, 401);
     assert.equal(res.body.ok, false);
+  });
+
+  it('rejects disallowed packageName with 400', async () => {
+    const req = makeReq({
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: {
+        packageName: 'com.other.app',
+        productId: 'card_click_perm',
+        purchaseToken: 'bar',
+      },
+    });
+    const res = new MockRes();
+    await functions.verifyPurchase(req, res);
+    await res.finished;
+    assert.equal(res.statusCode, 400);
+    assert.equal(res.body.ok, false);
+    assert.equal(res.body.reason, 'invalid packageName');
+  });
+
+  it('rejects productId not in SKU_MAP with 400', async () => {
+    const req = makeReq({
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: {
+        packageName: 'com.example.idleHippo',
+        productId: 'unknown_sku',
+        purchaseToken: 'bar',
+      },
+    });
+    const res = new MockRes();
+    await functions.verifyPurchase(req, res);
+    await res.finished;
+    assert.equal(res.statusCode, 400);
+    assert.equal(res.body.ok, false);
+    assert.equal(res.body.reason, 'invalid productId');
   });
 });
  
