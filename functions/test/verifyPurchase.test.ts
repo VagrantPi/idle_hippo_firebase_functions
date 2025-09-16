@@ -123,7 +123,7 @@ describe('verifyPurchase (mock)', () => {
     assert.equal(res.body.ok, false);
   });
 
-  it('rejects disallowed packageName with 400', async () => {
+  it('rejects disallowed packageName with 200 + ok:false', async () => {
     const req = makeReq({
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -136,12 +136,12 @@ describe('verifyPurchase (mock)', () => {
     const res = new MockRes();
     await functions.verifyPurchase(req, res);
     await res.finished;
-    assert.equal(res.statusCode, 400);
+    assert.equal(res.statusCode, 200);
     assert.equal(res.body.ok, false);
-    assert.equal(res.body.reason, 'invalid packageName');
+    assert.equal(res.body.reason, 'package_not_allowed');
   });
 
-  it('rejects productId not in SKU_MAP with 400', async () => {
+  it('rejects productId not in SKU_MAP with 200 + ok:false', async () => {
     const req = makeReq({
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -154,9 +154,9 @@ describe('verifyPurchase (mock)', () => {
     const res = new MockRes();
     await functions.verifyPurchase(req, res);
     await res.finished;
-    assert.equal(res.statusCode, 400);
+    assert.equal(res.statusCode, 200);
     assert.equal(res.body.ok, false);
-    assert.equal(res.body.reason, 'invalid productId');
+    assert.equal(res.body.reason, 'sku_not_allowed');
   });
 });
  

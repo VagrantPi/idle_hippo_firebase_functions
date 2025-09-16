@@ -65,13 +65,11 @@ export const verifyPurchase = onRequest(
     }
 
     try {
-      // B2-3: enforce allowed package and SKU whitelist
-      if (!ALLOWED_PACKAGES.includes(packageName!)) {
-        res.status(400).json({ ok: false, reason: "invalid packageName" });
-        return;
-      }
-      if (!Object.prototype.hasOwnProperty.call(SKU_MAP, productId!)) {
-        res.status(400).json({ ok: false, reason: "invalid productId" });
+      // B2-4: static validation before Play API
+      const basic = validateBasic(packageName!, productId!);
+      if (!basic.ok) {
+        // Per spec: static validation failures return 200 with ok:false
+        res.status(200).json(basic);
         return;
       }
 
@@ -97,3 +95,13 @@ export const verifyPurchase = onRequest(
     }
   })
 );
+
+function validateBasic(packageName: string, productId: string): { ok: true } | { ok: false; reason: string } {
+  if (!ALLOWED_PACKAGES.includes(packageName)) {
+    return { ok: false, reason: "package_not_allowed" };
+  }
+  if (!Object.prototype.hasOwnProperty.call(SKU_MAP, productId)) {
+    return { ok: false, reason: "sku_not_allowed" };
+  }
+  return { ok: true };
+}
