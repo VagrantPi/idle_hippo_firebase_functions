@@ -12,6 +12,7 @@ import {onRequest} from "firebase-functions/https";
 import * as logger from "firebase-functions/logger";
 import {getConfig} from "./config.js";
 import {withCors, requireApiKeyIfSet, requireFields, requireJson} from "./http.js";
+import {ALLOWED_PACKAGES, SKU_MAP} from "./skuConfig.js";
 
 // Start writing functions
 // https://firebase.google.com/docs/functions/typescript
@@ -64,6 +65,16 @@ export const verifyPurchase = onRequest(
     }
 
     try {
+      // B2-3: enforce allowed package and SKU whitelist
+      if (!ALLOWED_PACKAGES.includes(packageName!)) {
+        res.status(400).json({ ok: false, reason: "invalid packageName" });
+        return;
+      }
+      if (!Object.prototype.hasOwnProperty.call(SKU_MAP, productId!)) {
+        res.status(400).json({ ok: false, reason: "invalid productId" });
+        return;
+      }
+
       const {usePlayApi} = getConfig();
       if (!usePlayApi) {
         const now = Date.now().toString();
