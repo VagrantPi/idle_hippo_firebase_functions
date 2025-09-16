@@ -39,7 +39,7 @@
 
 - 驗證時機：在 `verifyPurchase` 進入 Mock/Play 流程前先檢查下列條件。
 - 檢查項目：
-  - packageName：必須存在於 `ALLOWED_PACKAGES`；否則回 400。
+  - packageName：必須等於 `ALLOWED_PACKAGE`；否則回 400。
   - productId：必須存在於 `SKU_MAP`（白名單）；否則回 400。
 - 回應行為：
   - packageName 不在白名單 → `400 { ok:false, reason:"invalid packageName" }`
@@ -65,5 +65,5 @@
 ### 維護說明
 
 - 新增/調整商品時，僅需更新 `functions/src/skuConfig.ts`：
-  - 需要允許新 App 套件時，加到 `ALLOWED_PACKAGES`。
+  - 需要允許新 App 套件時，修改 `ALLOWED_PACKAGE`。
   - 新增商品時，加到 `SKU_MAP` 並標注 `consumable` 或 `nonConsumable`。
